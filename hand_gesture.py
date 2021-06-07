@@ -7,7 +7,7 @@ import numpy as np
 from pymemcache.client import base 
 
 def hand_gesture_run():
-    # initialize the base client
+    # initialize the base client to store information used in different scripts
     hand_client = base.Client(("localhost", 11211))
     hand_client.set("rotation_mode", "initialize")
     hand_client.set("zoom_mode", "initialize")

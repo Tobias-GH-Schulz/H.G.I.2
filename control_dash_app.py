@@ -14,18 +14,18 @@ import numpy as np
 
 app = dash.Dash(__name__)
 
+# define functions for camera view calculations
+
+# for rotation
 def rotate(x, y, z, theta):
     w = x + 1j * y
     return np.real(np.exp(1j * theta) * w), np.imag(np.exp(1j * theta) * w), z
 
-def rotate_z(x, y, z, theta):
-    w = x + 1j * y
-    return np.real(np.exp(1j * theta) * w), np.imag(np.exp(1j * theta) * w), np.real(np.exp(1j * theta) * w)
-
+#for zooming
 def zoom(x, y, z, theta):
     return x * theta, y * theta, z * theta
 
-# initialize hand client
+# initialize the base client to store information used in different scripts
 hand_client = base.Client(("localhost", 11211))
 hand_client.set("last_state_zoom", "initialize")
 hand_client.set("last_state_rotate", "initialize")
@@ -72,50 +72,57 @@ app.layout = html.Div([
 @app.callback(Output('live-update-graph', 'figure'),
               Input('interval-component', 'n_intervals'))
 
+# def callback function to update figure
 def update_graph_live(n):
 
     camera = None
 
-    # read the value from the .txt file saved in the OpenCV  
+    # read the value from the hand_client file saved in the hand_gesture.py
     info = eval(hand_client.get("update_info"))
     state = list(info)[0]
     state_value = list(info.values())[0]
 
+    # if the mode is rotation
     if state == "rotate_xy":
         mode = str(hand_client.get("zoom_mode")).strip("b''")
+        # make sure that after zooming the camera stays at the zoom level
         if mode == "zoom off":
             x_eye, y_eye, z_eye = eval(hand_client.get("last_state_zoom"))
-
+        # if the rotation is not following a previous zooming use standard parameters for camera setting
         else:
             x_eye = 1.25
             y_eye = 1.25
             z_eye = 1.25
-
+        # get the rotation value and calculate new camera settings
         theta = float(state_value)
         new_x, new_y, new_z = rotate(float(x_eye), float(y_eye), float(z_eye), -theta)
         camera = dict(
                 eye=dict(x=new_x, y=new_y, z=new_z)
             )
-
+        # save the calculated camera setting after rotation for following opterations like zooming
         hand_client.set("last_state_rotate", (new_x, new_y, new_z))
 
+    # if the mode is zoom
     if state == "zoom":
         mode = str(hand_client.get("rotation_mode")).strip("b''")
+        # make sure that after rotation the camera stays at the rotated view
         if mode == "rotation off":
             x_eye, y_eye, z_eye = eval(hand_client.get("last_state_rotate"))
-
+        # if the zooming is not following a previous rotation use standard parameters for camera setting
         else:
             x_eye = 1.25
             y_eye = 1.25
             z_eye = 1.25
+        # get the zooming value and calculate new camera settings
         theta = float(state_value)
         new_x, new_y, new_z = zoom(float(x_eye), float(y_eye), float(z_eye), theta)
         camera = dict(
                 eye=dict(x=new_x, y=new_y, z=new_z)
             )
-
+        # save the calculated camera setting after zooming for following opterations like rotation
         hand_client.set("last_state_zoom", (new_x, new_y, new_z))
 
+    # update the plotly figure layout with the new calculated scene_camera values
     if camera:
         fig.update_layout(scene_camera=camera)
 
