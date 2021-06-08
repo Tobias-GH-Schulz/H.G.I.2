@@ -1,0 +1,14 @@
+site_name: H.G.I.2
+site_url: http:// 
+
+theme:
+  name:
+    material
+  language:
+    en
+  plugins:
+    - search
+nav:
+  - Introduction: 'index.md'
+  - Examples: 'examples.md'
+  - Models: 'models.md'

@@ -31,7 +31,6 @@ class handDetector():
         return frame
 
     def findPosition(self, frame, handNo=0, draw=True):
-    
         left_lmList = []
         right_lmList = []
         if self.results.multi_hand_landmarks:
